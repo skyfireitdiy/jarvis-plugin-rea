@@ -1,5 +1,0 @@
-# rea Agent 定义模板（可选，需在 config.yaml 启用 agent_definition_dirs）
-name: rea_agent
-description: rea 的 Agent 角色定义。
-system_prompt: |
-  你是 rea 插件的专用 Agent。

@@ -1,67 +1,95 @@
-# rea
+# rea — REA 逆向工程集成插件
 
-> 由 `jarvis --new-plugin rea` 生成的插件脚手架。
+> 基于 [REA（Reverse Engineer Anything）](https://github.com/morluto/rea) 的 Jarvis 外部插件。
+> 让 Jarvis Agent 具备二进制 / 应用 / 运行时逆向分析能力，支持**一键环境配置**、**多节点批量部署**与 **MCP 自动注册**。
+
+REA 是一个面向编码 Agent 的逆向工程工具包（npm 包 `rea-agents`），通过 MCP 服务器 + CLI
+让 Agent 深入分析目标（原生二进制、JavaScript/Electron、.NET 程序集、Android APK、网站、进程行为等），
+直到二进制级别，并提供结构化还原证据。分析全部在本地运行。
+
+## 功能特性
+
+| 功能 | 说明 |
+| --- | --- |
+| ⚙️ 一键环境配置 | `rea_setup` 工具：检测 Node 环境 → 拉取 rea-agents → 验证 MCP 服务器 |
+| 🌐 多节点配置 | `rea_node_setup` 工具：通过网关在多个 Jarvis 节点批量部署 REA |
+| 🔌 注册 MCP | 插件 `mcpserver` 扩展点自动注册 REA MCP（stdio: `npx rea-agents mcp`）；`rea_register_mcp` 工具可手动管理全局 mcp 配置 |
+| 📋 使用规则 | `rules/rea.md` 指导 Agent 正确配置与使用 REA |
+
+## 安装
+
+### 从插件市场安装（推荐）
+
+在 Jarvis 插件管理面板的「市场」页签搜索 `rea`，一键安装。
+
+### 命令行安装
+
+```bash
+# 从源码仓库安装
+jarvis --install-plugin https://github.com/skyfireitdiy/jarvis-plugin-rea
+
+# 或从本地目录安装
+jarvis --install-plugin /path/to/rea
+```
+
+安装后重启 Jarvis 使插件与 MCP 注册生效：
+
+```bash
+jarvis --list-plugins   # 确认 rea 插件已注册
+```
+
+## 使用
+
+### 1. 一键配置环境
+
+让 Agent 执行 `rea_setup` 工具，或直接说：
+
+> 帮我配置 REA 逆向工程环境
+
+工具会检测 Node.js / npm / npx，拉取 `rea-agents`，并验证 MCP 服务器可启动。
+
+### 2. 多节点批量配置
+
+让 Agent 执行 `rea_node_setup` 工具（可指定 `node_ids` 或对全部节点执行）：
+
+> 在所有节点上部署 REA 环境
+
+工具会列出网关节点，逐节点检测 Node 环境、验证 rea-agents 与 MCP 启动。
+
+### 3. 注册 / 管理 MCP
+
+REA MCP 已由插件自动注册。如需手动管理全局配置，用 `rea_register_mcp` 工具
+检查/写入 `~/.jarvis/config.yaml` 的 `mcp` 列表。
+
+注册后 REA 工具以 `rea_tool_call_<tool_name>` 形式提供（共 170+ 个工具），
+例如 `rea_tool_call_inspect_native_load_image`、`rea_tool_call_procedure_pseudo_code` 等。
+
+### 4. 使用 REA 进行逆向分析
+
+安装并重启后，直接让 Agent 分析目标：
+
+> 用 REA 分析 /path/to/app，解释它的搜索功能是怎么实现的，展示证据
 
 ## 插件结构
 
 ```
 rea/
-├── config.yaml          # 插件配置（name/version + 扩展点声明）
+├── config.yaml          # 插件配置：mcpserver（MCP 注册）、rules、tools、dependencies
 ├── README.md
-├── rules/               # 规则（YAML front matter: name/description）
-├── tools/               # 工具（class XxxTool, name==文件名 stem）
-├── agents/              # Agent 定义（可选）
-├── orchestration/       # 编排流水线（可选）
-├── frontend/            # 前端扩展（可选，用 window.Vue）
-└── plugin/              # 插件私有功能（可选，运行在 gateway，不暴露给 Agent）
+├── rules/
+│   └── rea.md           # REA 使用规则（含配置文档）
+└── tools/
+    ├── rea_setup.py         # 一键环境配置
+    ├── rea_node_setup.py    # 多节点批量配置
+    └── rea_register_mcp.py  # 手动注册/管理 MCP
 ```
 
-## 开发指南
+## 环境要求
 
-### 1. 工具（tools/）
+- Jarvis（支持外部插件）
+- Node.js 22.x（>=22.19）/ 24.x（>=24.11）/ 26+ 与 npm（REA 依赖）
+- 深度原生二进制分析需用户已有的 Hopper / Ghidra / IDA（REA 不代为安装）
 
-工具文件是 Python 模块，类名 `ReaTool`，**`name` 必须等于文件名 stem（`rea_tool`）**，
-否则注册表不会加载。实现 `check()`（静态方法，返回 bool 表示是否可用）与
-`execute(args) -> {"success", "stdout", "stderr"}`。
+## 许可证
 
-### 2. 规则（rules/）
-
-Markdown 文件，开头带 YAML front matter：
-
-```yaml
----
-name: <规则名>
-description: <何时触发该规则>
----
-```
-
-### 3. 前端扩展（frontend/，可选）
-
-前端 JS 是纯浏览器 ES module：**用 `window.Vue` 渲染，导出 default 组件，不要 `import 'vue'`**。
-在 config.yaml 的 `frontend` 字段声明 `admin_tabs` / `sidebar_views` / `tool_panels`。
-
-### 4. 编排（orchestration/，可选）
-
-YAML 编排流水线，配合 `OrganizeAgents` 与 `jca -n --task-file` 消费。
-
-### 5. 插件私有功能（plugin/，可选）
-
-插件自己使用的功能实现（如 API 封装、业务纯函数）放在 `plugin/api.py`。
-**不声明在 `tool_load_dirs`**，因此不会被 ToolRegistry 加载，Agent 看不到、调不到；
-运行在 gateway，供前端代理调用。约定：
-
-- 每个功能是纯函数，返回 dict：`{"success": bool, "data": .../ "message": .../ "error": ...}`。
-- 模块末尾定义 `PUBLIC_FUNCTIONS: list[str]` 白名单，gateway 只允许调用白名单内函数。
-- 前端通过 `POST /api/plugins/{node_id}/function-call` 调用（请求体 `{plugin, function, arguments}`）。
-
-## 安装
-
-```bash
-jarvis --install-plugin rea
-```
-
-## 卸载
-
-```bash
-jarvis --uninstall-plugin rea
-```
+MIT

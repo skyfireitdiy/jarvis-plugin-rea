@@ -1,6 +1,0 @@
-# rea 编排流水线模板（可选，配合 OrganizeAgents + --task-file 消费）
-# 参考 builtin/agent_orchestration/ 下的示例编排文件格式。
-agents:
-  - name: rea_worker
-    role: 执行者
-    task: 在此描述任务
