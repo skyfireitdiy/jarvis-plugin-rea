@@ -1,0 +1,41 @@
+---
+name: rea
+description: rea——请补充插件描述。
+version: 0.1.0
+license: MIT
+builtin: true
+# 扩展点说明（按需启用，路径用 {{plugin_dir}} 占位，运行时自动渲染）：
+# - rules_load_dirs: 规则目录，规则文件带 YAML front matter（name/description）
+# - tool_load_dirs: 工具目录，工具类 name 必须等于文件名 stem
+# - agent_definition_dirs: Agent 定义目录（YAML 格式）
+# - orchestration: 编排流水线（配合 OrganizeAgents + --task-file 消费）
+# - frontend: 前端扩展点（admin_tabs/sidebar_views/tool_panels，JS 用 window.Vue）
+# - plugin/: 插件私有功能（运行在 gateway，供前端代理调用，不暴露给 Agent）
+#   api.py 末尾需定义 PUBLIC_FUNCTIONS 白名单，gateway 只允许调用白名单内函数。
+# 私有配置隔离：除上述扩展点字段外，其余字段（name/version/dependencies/自定义业务字段）
+# 会被隔离到全局配置 plugin_configs.<插件名>，不污染全局配置顶层、多插件同名私有字段互不覆盖；
+# 插件可通过 get_plugin_config("<插件名>") 读取自己的私有配置。
+rules_load_dirs:
+  - "{{plugin_dir}}/rules"
+tool_load_dirs:
+  - "{{plugin_dir}}/tools"
+# agent_definition_dirs:
+#   - "{{plugin_dir}}/agents"
+# 编排流水线模板声明（配合 @OrganizeAgents 自动发现，用户可直接选编号）
+orchestration:
+  - name: "rea-pipeline"
+    description: "rea 编排流水线"
+    file: "{{plugin_dir}}/orchestration/rea_pipeline.yaml"
+# frontend:
+#   admin_tabs:
+#     - id: rea-admin
+#       title: "rea 管理"
+#       entry: admin_tab.js
+#   sidebar_views:
+#     - id: rea-view
+#       title: "rea"
+#       entry: sidebar_view.js
+# 依赖声明（可选，三类：plugins/python/commands）
+# dependencies:
+#   commands:
+#     - git
