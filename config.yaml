@@ -20,6 +20,10 @@ mcp:
       - "rea-agents@latest"
       - "mcp"
     enable: true
+# 生命周期钩子：安装前检查并安装 Node.js 与 rea-agents（pre-* 失败会中止安装）
+hooks:
+  pre-install:
+    - "bash scripts/pre-install.sh"
 # 依赖声明：REA 需要 Node.js 与 npm/npx
 dependencies:
   commands:
