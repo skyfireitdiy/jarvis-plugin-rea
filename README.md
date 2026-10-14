@@ -86,8 +86,10 @@ REA MCP 已由插件 `mcp` 扩展点自动注册（stdio: `npx rea-agents mcp`�
 
 ```
 rea/
-├── config.yaml          # 插件配置：mcp（MCP 注册）、replace_map（指令模板）、rules、tools、dependencies
+├── config.yaml          # 插件配置：logo、mcp（MCP 注册）、replace_map（指令模板）、rules、tools、dependencies
 ├── README.md
+├── assets/
+│   └── rea-icon.svg     # 插件图标
 ├── rules/
 │   └── rea.md           # REA 使用规则（含配置文档）
 └── tools/
