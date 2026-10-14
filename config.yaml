@@ -9,7 +9,7 @@ rules_load_dirs:
 tool_load_dirs:
   - "{{plugin_dir}}/tools"
 # 注册 REA MCP 服务器（stdio 传输）：映射到全局 mcp 列表，由 get_mcp_config 消费
-mcpserver:
+mcp:
   - type: "stdio"
     name: "rea"
     command: "npx"
@@ -24,3 +24,63 @@ dependencies:
     - node
     - npm
     - npx
+# 指令模板（replace_map）：用户在输入框输入 <rea.setup> 即触发一键配置引导
+replace_map:
+  rea.setup:
+    append: false
+    description: "一键配置 REA 逆向工程环境：先询问逆向目标，再按目标安装配套工具并验证"
+    template: |
+      请为用户配置 REA（Reverse Engineer Anything）逆向工程环境。必须严格按以下流程执行：
+
+      ## 第一步：询问逆向目标（必须先问，不得跳过）
+      向用户询问本次要逆向分析的目标类型是什么，从以下类别中选择（可多选）：
+      1. **原生二进制/库**（EXE/DLL/ELF/Mach-O/固件内程序）→ 需要 Ghidra（+JDK 21+）或 Hopper（macOS/Linux）或 IDA
+      2. **JavaScript / Electron 应用**（.js/.asar/前端包）→ 仅需 Node.js + npm（REA 自带能力，无需额外工具）
+      3. **网站 / 浏览器行为** → 需要 Chrome / Chromium / Edge
+      4. **Android APK** → 需要 JADX + JDK 17+；若还要看资源/清单 → 加 Apktool + Java；若连接真机/模拟器 → 加 adb
+      5. **.NET / Flutter / 软件包** → 仅需 Node.js + npm
+      6. **固件**（Linux）→ 需要 Binwalk 与/或 Unblob
+      7. **WASM** → 需要 WABT
+      8. **ELF / Linux crash（core dump）** → 需要 pwntools / GDB / pwndbg
+      9. **PCAP / 网络抓包**（Linux）→ 需要 TShark / capinfos
+      10. **进程行为观察**（Linux/macOS）→ 仅需 PTY（REA 自带，无需额外工具）
+      11. **其他**（SQLite/EVM 字节码/HAR 等）→ 按 REA 官方文档对应目标准备工具
+
+      ## 第二步：确认配套工具安装方案
+      根据用户选择的目标，明确列出需要安装/检查的配套工具清单，向用户说明：
+      - 每个工具的作用与安装方式（如 Ghidra 需下载解压 + 设置 GHIDRA_INSTALL_DIR/JAVA_HOME；JADX 需下载 + JDK）
+      - 需要用户确认后（或经用户授权后）再执行安装，禁止未经确认擅自安装系统级软件
+      - 已安装的工具直接跳过，只补装缺失项
+
+      ## 第三步：安装/检查配套工具
+      按确认的方案逐个检查并安装配套工具：
+      - 用 `which <tool>` 或 `--version` 检查是否已安装
+      - 缺失时按官方方式安装（apt/brew/winget/下载解压等），并记录安装结果
+      - Ghidra：设置 GHIDRA_INSTALL_DIR 与 JAVA_HOME 环境变量后，用 `npx -y rea-agents@latest doctor --provider ghidra --json` 验证
+      - Hopper：macOS/Linux 用 `npx -y rea-agents@latest doctor --provider hopper --json` 验证
+      - 其他目标：用 `npx -y rea-agents@latest doctor --provider <provider> --json` 验证（provider 名见 REA 文档）
+
+      ## 第四步：配置 REA 本体
+      调用 `rea_setup` 工具完成 REA 本体配置（检测 Node/npm/npx → 获取 rea-agents → 验证 MCP 服务器）。
+      若 rea_setup 不可用，手动执行：`npx -y rea-agents@latest --version` 与 `npx -y rea-agents@latest mcp` 验证。
+
+      ## 第五步：汇总结果
+      输出配置结果清单：
+      - 已就绪的配套工具（含版本）
+      - 本次新安装的工具
+      - REA MCP 服务器状态
+      - 提示用户重启 Jarvis 使 MCP 生效，之后即可用 `rea_tool_call_*` 工具进行逆向分析
+  rea.doctor:
+    append: false
+    description: "诊断 REA 环境：检查 Node、rea-agents、MCP 与各分析 provider 是否就绪"
+    template: |
+      请为用户诊断 REA（Reverse Engineer Anything）环境是否就绪。按以下步骤执行：
+
+      1. **检查基础环境**：`node -v`、`npm -v`、`npx -v`，缺失则提示安装 Node.js 22+。
+      2. **检查 REA 本体**：`npx -y rea-agents@latest --version`，失败则提示网络或 npm registry 问题。
+      3. **检查 MCP 连接**：调用 `rea_setup`（verify_mcp=true）验证 MCP 服务器可启动；或手动执行 `npx -y rea-agents@latest mcp` 做握手。
+      4. **检查各分析 provider**：对常见 provider 依次执行
+         `npx -y rea-agents@latest doctor --provider <provider> --json`，
+         provider 包括 ghidra、hopper、ida、jadx（Android）、chrome（网站）、binwalk/unblob（固件）等，
+         记录每个 provider 的 healthy 状态与缺失原因。
+      5. **汇总诊断报告**：列出就绪项 / 缺失项 / 修复建议，并提示用户下一步该装什么。

@@ -133,7 +133,7 @@ class ReaSetupTool:
 
             lines.append("✅ REA 环境配置完成！")
             lines.append(
-                "REA MCP 服务器已由本插件自动注册（config.yaml 的 mcpserver 扩展点），"
+                "REA MCP 服务器已由本插件自动注册（config.yaml 的 mcp 扩展点），"
                 "重启 Jarvis 后即可使用 rea_* 逆向工具。"
             )
             lines.append(
