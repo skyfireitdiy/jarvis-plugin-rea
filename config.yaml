@@ -1,5 +1,6 @@
 ---
-name: rea
+id: rea
+name: REA 逆向工程
 description: REA（Reverse Engineer Anything）集成插件——一键配置 REA 逆向工程环境、支持多节点批量部署、自动注册 MCP 服务器，让 Agent 具备二进制/应用/运行时逆向分析能力。
 version: 0.1.0
 license: MIT
